@@ -1,0 +1,133 @@
+Sub StockLoop()
+    Dim ws As Worksheet
+    Dim ticker As String
+    Dim OpenPrice As Double
+    Dim ClosePrice As Double
+    Dim StockVolume As Double
+    Dim lastRow As Long
+    Dim quarter As Integer
+    Dim startRow As Long
+    Dim endRow As Long
+    Dim outputRow As Long
+    Dim quartChange As Double
+    Dim percentChange As Double
+    Dim rg As Range
+    Dim cond1 As FormatCondition
+    Dim cond2 As FormatCondition
+    Dim dataRange As Range
+    Dim cell As Range
+    Dim maxValue As Double
+    Dim minValue As Double
+    Dim minTicker As String, maxTicker As String
+    Dim maxVol As Double
+    Dim maxVolTicker As String
+   
+ For Each ws In ThisWorkbook.Worksheets
+    startRow = 2
+    outputRow = 2
+    
+' Initialize stockVolume for each new ticker
+    StockVolume = 0
+' Setting up new columns for calculations
+    
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    ws.Cells(1, 10).Value = "Ticker"
+    ws.Cells(1, 11).Value = "Quarterly Change"
+    OpenPrice = ws.Cells(2, 3).Value
+    ws.Cells(1, 12).Value = "Percent Change"
+    ws.Cells(1, 13).Value = "Total Stock Volume"
+
+' Initialize StockVolume for each new ticker
+    StockVolume = 0
+
+' Calculating requested values
+    For i = startRow To lastRow
+        If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then
+            ClosePrice = ws.Cells(i, 6).Value
+            quartChange = ClosePrice - OpenPrice
+        ws.Cells(outputRow, 10).Value = ws.Cells(i, 1).Value
+        ws.Cells(outputRow, 11).Value = quartChange
+        ws.Cells(outputRow, 11).NumberFormat = "0.00"
+             percentChange = quartChange / OpenPrice
+        ws.Cells(outputRow, 12).Value = percentChange
+        ws.Cells(outputRow, 12).NumberFormat = "0.00%"
+        ws.Cells(outputRow, 13).Value = StockVolume  ' Assign the total stock volume
+            outputRow = outputRow + 1
+        ws.Cells(outputRow, 13).NumberFormat = "0"
+        ' Reset StockVolume for the next ticker
+        StockVolume = 0
+        ' Update OpenPrice for the next ticker
+        OpenPrice = ws.Cells(i + 1, 3).Value
+        ElseIf ws.Cells(i, 1).Value = ws.Cells(i + 1, 1).Value Then
+            StockVolume = StockVolume + ws.Cells(i, 7).Value  ' Accumulate stock volume for the same ticker
+    End If
+Next i
+
+' Conditional formatting of quarterly change
+    Set rg = ws.Range("K2:L2" & ws.Cells(ws.Rows.Count, "K").End(xlUp).Row)
+
+    ' Format positive values (greater than 0) in green
+        Set cond1 = rg.FormatConditions.Add(Type:=xlCellValue, Operator:=xlGreater, Formula1:="0")
+    cond1.Interior.ColorIndex = 4 ' Green
+
+    ' Format negative values (less than 0) in red
+         Set cond2 = rg.FormatConditions.Add(Type:=xlCellValue, Operator:=xlLess, Formula1:="0")
+    cond2.Interior.ColorIndex = 3 ' Red
+    
+
+' Find the last row with data in column L
+        lastRow = ws.Cells(ws.Rows.Count, "L").End(xlUp).Row
+    
+' Initialize minVal and maxVal with the first data row values in column L
+        minVal = ws.Cells(2, "L").Value
+        maxVal = ws.Cells(2, "L").Value
+        maxVol = ws.Cells(i, "M").Value
+        minTicker = ws.Cells(2, "J").Value
+        maxTicker = ws.Cells(2, "J").Value
+        maxVolTicker = ws.Cells(i, "J").Value
+    
+' Loop through the data in column L to find the minimum and maximum values
+        For i = 2 To lastRow
+         If ws.Cells(i, "L").Value < minVal Then
+                minVal = ws.Cells(i, "L").Value
+                minTicker = ws.Cells(i, "J").Value
+         End If
+        
+        If ws.Cells(i, "L").Value > maxVal Then
+            maxVal = ws.Cells(i, "L").Value
+            maxTicker = ws.Cells(i, "J").Value
+        End If
+        
+         If ws.Cells(i, "M").Value > maxVol Then
+        maxVol = ws.Cells(i, "M").Value
+        maxVolTicker = ws.Cells(i, "J").Value
+    End If
+        
+    Next i
+    
+ ' Copy the minimum and maximum values along with their tickers to cells in columns Q and R
+    
+    ws.Range("Q1").Value = "Ticker"
+    ws.Range("Q2").Value = maxTicker
+    ws.Range("Q3").Value = minTicker
+    ws.Range("Q4").Value = maxVolTicker
+    ws.Range("R1").Value = "Value"
+    ws.Range("R2").Value = maxVal
+    ws.Range("R2").NumberFormat = "0.00%"
+    ws.Range("R3").Value = minVal
+    ws.Range("R3").NumberFormat = "0.00%"
+    ws.Range("R4").Value = maxVol
+    ws.Range("R4").NumberFormat = "0"
+    ws.Range("P2").Value = "Minimum Percent Change"
+    ws.Range("P3").Value = "Maximum Percent Change"
+    ws.Range("P4").Value = "Greatest Total Volume"
+    
+' Formatting cells to be legible
+ws.Columns("A:R").AutoFit
+ws.Columns("A:R").HorizontalAlignment = xlCenter
+    
+Next ws
+
+
+End Sub
+
